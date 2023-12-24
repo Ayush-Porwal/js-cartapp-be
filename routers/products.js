@@ -47,6 +47,10 @@ productsRouter
     }
   })
   .post(jwtAuthorizer, async (req, res) => {
+    if (req.user.role !== "admin") {
+      res.status(401).json({ message: "Only admins can create products" });
+      return;
+    }
     let products;
     try {
       products = await Products.insertMany(req.body.products);

@@ -9,7 +9,7 @@ const authRouter = express.Router();
 authRouter.route("/signin").post(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await Users.findOne({ email });
+  const user = await Users.findOne({ userEmail: email });
 
   if (!user) {
     res.status(404).json({ message: "User not found" });
@@ -28,7 +28,12 @@ authRouter.route("/signin").post(async (req, res) => {
   }
 
   const signinToken = jwt.sign(
-    { _id: user._id, username: user.userName, email: user.userEmail },
+    {
+      _id: user._id,
+      username: user.userName,
+      email: user.userEmail,
+      role: user.userRole,
+    },
     process.env.JWT_SECRET,
     {
       expiresIn: "1d",
@@ -39,14 +44,15 @@ authRouter.route("/signin").post(async (req, res) => {
 
   res.json({
     _id: user._id,
+    role: user.userRole,
     email: user.userEmail,
     message: "Signed in successfully",
   });
 });
 
 authRouter.route("/signup").post(async (req, res) => {
-  const { username, email, password } = req.body;
-  const user = await Users.findOne({ email });
+  const { username, email, password, role } = req.body;
+  const user = await Users.findOne({ userEmail: email });
   if (user) {
     res.status(200).json({ message: "User already exists" });
   } else {
@@ -59,13 +65,22 @@ authRouter.route("/signup").post(async (req, res) => {
       userEmail: email,
       userName: username,
       userPassword: hashedPassword.toString("hex"),
+      userRole: role,
     });
     res.status(201).json({
       _id: newUser._id,
       email: newUser.userEmail,
+      role: newUser.userRole,
       message: "User created successfully",
     });
   }
+});
+
+authRouter.route("/signout").post(async (req, res) => {
+  res.clearCookie("token");
+  res.status(201).json({
+    message: "User signed out successfully",
+  });
 });
 
 export default authRouter;
