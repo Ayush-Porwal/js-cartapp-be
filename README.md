@@ -5,7 +5,7 @@ this is backend for cartapp written in javascript and using mongodb for database
 # documentation
 
 Models
-![model image](assets/docs/models.png)
+<img src="assets/docs/models.svg">
 
 Signin Flow
-![signin flow](assets/docs/signinflow.png)
+<img src="assets/docs/signin_flow.svg">
