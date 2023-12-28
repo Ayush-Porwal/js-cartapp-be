@@ -1,12 +1,12 @@
-import express from "express";
-import Products from "../db/models/product.model.js";
+import express from 'express';
+import Products from '../db/models/product.model.js';
 
-import jwtAuthorizer from "../middlewares/jwtAuthorizer.js";
+import jwtAuthorizer from '../middlewares/jwtAuthorizer.js';
 
 const productsRouter = express.Router();
 
 productsRouter
-  .route("/")
+  .route('/')
   .get(async (req, res) => {
     let products;
     const { category, tags, isOnSale, priceRange, inStock, ratingRange } =
@@ -21,7 +21,7 @@ productsRouter
       query.productTags = { $in: tags };
     }
     if (isOnSale) {
-      query.productIsOnSale = isOnSale === "true";
+      query.productIsOnSale = isOnSale === 'true';
     }
     if (priceRange) {
       query.productSalePrice = {
@@ -43,12 +43,12 @@ productsRouter
       res.send(products);
     } catch (err) {
       res.status(err.status || 500);
-      res.render("error", { error: err.message });
+      res.render('error', { error: err.message });
     }
   })
   .post(jwtAuthorizer, async (req, res) => {
-    if (req.user.role !== "admin") {
-      res.status(401).json({ message: "Only admins can create products" });
+    if (req.user.role !== 'seller') {
+      res.status(401).json({ message: 'Only sellers can create products' });
       return;
     }
     let products;
@@ -57,7 +57,7 @@ productsRouter
       res.send(products);
     } catch (err) {
       res.status(err.status || 500);
-      res.render("error", { error: err.message });
+      res.render('error', { error: err.message });
     }
   });
 
