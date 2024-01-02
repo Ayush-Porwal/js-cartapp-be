@@ -1,4 +1,10 @@
+import crypto from 'crypto';
 import mongoose from 'mongoose';
+import isEmail from 'validator/lib/isEmail.js';
+
+const getHashedPassword = async (password) => {
+  return await crypto.scrypt(password, process.env.CRYPTO_SECRET, 64);
+};
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,7 +29,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       validate: {
         validator: function (value) {
-          return /^\S+@\S+$/.test(value);
+          return isEmail(value);
         },
         message: 'Please enter a valid email, got: { VALUE }',
       },
@@ -59,5 +65,15 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre('save', async function () {
+  const hashedPassword = await getHashedPassword(this.userPassword);
+  this.userPassword = hashedPassword.toString('hex');
+});
+
+userSchema.method('comparePassword', async function (password) {
+  const hashedPassword = await getHashedPassword(password);
+  return this.userPassword === hashedPassword.toString('hex');
+});
 
 export default userSchema;

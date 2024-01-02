@@ -1,29 +1,22 @@
-import crypto from "crypto";
-import express from "express";
-import jwt from "jsonwebtoken";
+import express from 'express';
+import jwt from 'jsonwebtoken';
 
-import Users from "../db/models/user.model.js";
+import Users from '../db/models/user.model.js';
 
 const authRouter = express.Router();
 
-authRouter.route("/signin").post(async (req, res) => {
+authRouter.route('/signin').post(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await Users.findOne({ userEmail: email });
 
   if (!user) {
-    res.status(404).json({ message: "User not found" });
+    res.status(404).json({ message: 'User not found' });
     return;
   }
 
-  const hashedPassword = crypto.scryptSync(
-    password,
-    process.env.CRYPTO_SECRET,
-    64
-  );
-
-  if (user.userPassword !== hashedPassword.toString("hex")) {
-    res.status(401).json({ message: "Incorrect password" });
+  if (!user.comparePassword(password)) {
+    res.status(401).json({ message: 'Incorrect password' });
     return;
   }
 
@@ -36,50 +29,48 @@ authRouter.route("/signin").post(async (req, res) => {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1d",
+      expiresIn: '1d',
     }
   );
 
-  res.cookie("token", signinToken);
+  res.cookie('token', signinToken, {
+    httpOnly: true,
+    secure: true,
+  });
 
   res.json({
     _id: user._id,
     role: user.userRole,
     email: user.userEmail,
-    message: "Signed in successfully",
+    message: 'Signed in successfully',
   });
 });
 
-authRouter.route("/signup").post(async (req, res) => {
+authRouter.route('/signup').post(async (req, res) => {
   const { username, email, password, role } = req.body;
   const user = await Users.findOne({ userEmail: email });
   if (user) {
-    res.status(200).json({ message: "User already exists" });
+    res.status(200).json({ message: 'User already exists' });
   } else {
-    const hashedPassword = crypto.scryptSync(
-      password,
-      process.env.CRYPTO_SECRET,
-      64
-    );
     const newUser = await Users.create({
       userEmail: email,
       userName: username,
-      userPassword: hashedPassword.toString("hex"),
+      userPassword: password,
       userRole: role,
     });
     res.status(201).json({
       _id: newUser._id,
       email: newUser.userEmail,
       role: newUser.userRole,
-      message: "User created successfully",
+      message: 'User created successfully',
     });
   }
 });
 
-authRouter.route("/signout").post(async (req, res) => {
-  res.clearCookie("token");
+authRouter.route('/signout').post(async (req, res) => {
+  res.clearCookie('token');
   res.status(201).json({
-    message: "User signed out successfully",
+    message: 'User signed out successfully',
   });
 });
 
